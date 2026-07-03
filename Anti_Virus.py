@@ -9,6 +9,8 @@
 # name: returns the name of the file or folder.
 from pathlib import Path 
 
+# This library is used in creating GUI.
+import tkinter as tk
 
 # This library allows us to stop the code from runing for a speacifc amount of time (in seconds).
 import time 
@@ -36,12 +38,12 @@ analysis_results = {}
 
 
 # This function receives a path and for each file that can be accessed with this path is sends a request to VirusTotal to scan the file ,then it tsores thhe scan id that can extracted from the response that we get for each file.
-def scan_files (path):
+def scan_directory (path):
     
     for f in path.iterdir():
         
         if f.is_dir():
-            scan_files(f)
+            scan_directory(f)
         else:
             files_with_scan_ids[f.name]= send_scan_requests(f)
 
@@ -109,43 +111,60 @@ def mirroing_the_results():
 
         if analysis_results[key] == 0:
 
-            print(f"There is no viruses in the file with name: {key} ")
+            return f"There is no viruses in the file with name: {key} "
 
         else:
 
-            print(f"There are {analysis_results[key]} virus/es in the file with name: {key} ")                 
+            return f"There are {analysis_results[key]} virus/es in the file with name: {key} "                 
 
      
 
        
      
-
-
-
-
-def main():
-
-  # Receiving a path from the user and craete a Path object with this path
-   path = Path(input("Please enter a path: "))
-    
- # This message is for the user because sometimes the VirusToatal will receive a huge number of requests in the same time ,and it will send responses without content because of the huge number of the requests it can not reply to all of them ,so the user need to try again after 30 seconds.
-   print("Sometimes you will see that there is a problem ('Response without content) ,so try again after 30 seconds")
-
-
 # Here intially we check if the path is already exists in the device ,if is not a proper message will be printed.
 # If it exists we will call the function scan_files in order to send to the VirusTotal scan requests for each file that can be accessible with this path.
 # After this we will call the function get_reports send requets to VirusTotal in order to get the reports for ecah file that we have sent for it a request for scanning.
 # Then we call the function mirroing_the_results and it print for ecah file how many viruses exist in it.
-   if path.exists():
-         
-      scan_files(path)
-      get_reports()
-      mirroing_the_results()
-         
+def on_scan(path, root):
+    try:
+        path=Path(path)
+        scan_directory(path)
+        get_reports()
+        response=tk.Label(root, text="The scan is done , the results: "+ mirroing_the_results())    
+        response.grid(row=13, column=10, columnspan=2)  
+        
+    except FileNotFoundError:
+            response=tk.Label(root, text="The path does not exist , please enter a valid path")    
+            response.grid(row=13, column=10, columnspan=2)
+    except Exception as e:
+        response=tk.Label(root, text="An unexpected error has occurred: ")    
+        response.grid(row=13, column=10, columnspan=2)
+        
 
-   else:
-       print("The does not exists in this device!")    
-         
+
+def main():
+    # Receiving a path from the user 
+    root=tk.Tk()
+    tk.Label(root, text="File Path:").grid(row=10, column=10)
+    path = tk.Entry(root)
+    path.grid(row=10, column=11)
+    
+  
+   
+  
+ # This message is for the user because sometimes the VirusToatal will receive a huge number of requests in the same time ,and it will send responses without content because of the huge number of the requests it can not reply to all of them ,so the user need to try again after 30 seconds.
+    note=tk.Label(root,text="Note: Sometimes you will see that there is a problem ('Response without content) ,so try again after 30 seconds")
+    note.grid(row=11, column=10, columnspan=2)
+    
+    scan_button=tk.Button(root, text="Scan", command=lambda: on_scan(path.get(), root))
+    scan_button.grid(row=12, column=10, columnspan=2)
+
+    
+
+    root.mainloop()
+
+
+        
          
 
 
